@@ -6,9 +6,17 @@
     "start": "next start"
   },
   "dependencies": {
+    "@next-auth/mongodb-adapter": "^1.1.1",
+    "@reduxjs/toolkit": "^1.8.6",
+    "@types/bcryptjs": "^2.4.2",
+    "bcryptjs": "^2.4.3",
+    "mongodb": "^4.11.0",
     "next": "latest",
+    "next-auth": "^4.14.0",
     "react": "18.1.0",
-    "react-dom": "18.1.0"
+    "react-dom": "18.1.0",
+    "react-icons": "^4.6.0",
+    "react-redux": "^8.0.4"
   },
   "devDependencies": {
     "@types/node": "17.0.35",
