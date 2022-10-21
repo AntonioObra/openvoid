@@ -6,11 +6,11 @@ import { SessionProvider } from "next-auth/react";
 
 function MyApp({ Component, pageProps }: AppProps) {
   return (
-    <Provider store={store}>
-      <SessionProvider>
-        <Component {...pageProps} />
-      </SessionProvider>
-    </Provider>
+    // <Provider store={store}>
+    <SessionProvider>
+      <Component {...pageProps} />
+    </SessionProvider>
+    // </Provider>
   );
 }
 

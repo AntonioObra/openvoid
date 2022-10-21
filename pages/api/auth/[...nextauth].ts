@@ -1,43 +1,73 @@
 import NextAuth from "next-auth";
-import Providers from "next-auth/providers";
-import { verifyPassword } from "../../../lib/auth";
-import { connectDB } from "../../../lib/mongodb";
+import GithubProvider from "next-auth/providers/github";
+import { MongoDBAdapter } from "@next-auth/mongodb-adapter";
+import clientPromise from "../../../lib/mongodb";
+import dbConnect from "../../../lib/dbConnect";
+import CredentialsProvider from "next-auth/providers/credentials";
+import User from "../../../model/User";
+import { compare } from "bcryptjs";
 
-export default NextAuth({
-  session: {
-    jwt: true,
-  },
+export const authOptions = {
   providers: [
-    Providers.Credentials({
-      async authorize(credentials: any) {
-        const client = await connectDB();
+    GithubProvider({
+      clientId: process.env.GITHUB_ID!,
+      clientSecret: process.env.GITHUB_SECRET!,
+    }),
+    //add credentials provider
+    //authorize method
+    CredentialsProvider({
+      id: "credentials",
+      name: "Credentials",
+      credentials: {
+        email: {
+          label: "Email",
+          type: "text",
+        },
+        password: {
+          label: "Password",
+          type: "password",
+        },
+      },
+      async authorize(credentials) {
+        await dbConnect();
 
-        const usersCollection = client.db().collection("users");
-
-        const user = await usersCollection.findOne({
-          email: credentials.email,
+        // Find user with the email
+        const user = await User.findOne({
+          email: credentials?.email,
         });
 
+        // Email Not found
         if (!user) {
-          client.close();
-          throw new Error("No user found!");
+          throw new Error("Email is not registered");
         }
 
-        const isVerified = await verifyPassword(
-          credentials.password,
-          user.password
+        // Check hased password with DB hashed password
+        const isPasswordCorrect = await compare(
+          credentials!.password,
+          user.hashedPassword
         );
 
-        if (!isVerified) {
-          client.close();
-          throw new Error("Could not log you in!");
+        // Incorrect password
+        if (!isPasswordCorrect) {
+          throw new Error("Password is incorrect");
         }
 
-        client.close();
-        return {
-          email: user.email,
-        };
+        return user;
       },
     }),
   ],
-});
+  // pages: {
+  //   signIn: "/auth/signup",
+  // },
+  debug: process.env.NODE_ENV === "development",
+  adapter: MongoDBAdapter(clientPromise),
+  // session: {
+  //   strategy: "jwt",
+  // },
+  jwt: {
+    secret: process.env.NEXTAUTH_JWT_SECRET,
+  },
+  secret: process.env.NEXTAUTH_SECRET,
+};
+
+export default NextAuth(authOptions);

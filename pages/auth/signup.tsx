@@ -1,5 +1,7 @@
+import axios from "axios";
 import React, { useState, useRef } from "react";
-import { FaHashtag } from "react-icons/fa";
+import { useSession, signIn, getProviders } from "next-auth/react";
+import Router from "next/router";
 
 const SignupPage = () => {
   const [currentFieldSet, setCurrentFieldSet] = useState("email");
@@ -76,8 +78,54 @@ const SignupPage = () => {
     }
   };
 
-  const handleSubmit = (e: any) => {
+  const handleSubmit = async (e: any) => {
     e.preventDefault();
+    const userName = userNameRef.current?.value;
+    const password = passwordRef.current?.value;
+    const email = emailRef.current?.value;
+
+    const res = await axios
+      .post(
+        "/api/register",
+        {
+          userName,
+          password,
+          email,
+        },
+        {
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+        }
+      )
+      .then(async () => {
+        await loginUser();
+        redirectToHome();
+      })
+      .catch((err) => console.log(err));
+  };
+
+  const loginUser = async () => {
+    const password = passwordRef.current?.value;
+    const email = emailRef.current?.value;
+
+    const res: any = await signIn("credentials", {
+      redirect: false,
+      email: email,
+      password: password,
+      callbackUrl: `${window.location.origin}`,
+    });
+
+    res.error ? console.log(res.error) : redirectToHome();
+  };
+
+  const redirectToHome = () => {
+    const { pathname } = Router;
+    if (pathname === "/auth") {
+      // TODO: redirect to a success register page
+      Router.push("/");
+    }
   };
 
   return (
